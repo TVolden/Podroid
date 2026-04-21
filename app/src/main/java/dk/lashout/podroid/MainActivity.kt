@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity() {
                                         val label = when (screen) {
                                             Screen.Dashboard -> "Home"
                                             Screen.Explore -> "Explore"
-                                            Screen.Subscriptions -> "Podcasts"
+                                            Screen.Subscriptions -> "Podcast"
                                             Screen.Playlist -> "Playlist"
                                             Screen.History -> "History"
                                             Screen.Settings -> "Settings"
