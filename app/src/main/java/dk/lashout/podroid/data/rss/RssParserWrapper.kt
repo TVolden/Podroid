@@ -23,6 +23,73 @@ open class RssParserWrapper @Inject constructor() {
         SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ENGLISH)
     )
 
+    suspend fun fetchPodcastInfo(feedUrl: String): PodcastChannelInfo =
+        withContext(Dispatchers.IO) {
+            val connection = URL(feedUrl).openConnection() as HttpURLConnection
+            connection.apply {
+                setRequestProperty("User-Agent", "Podroid/1.0")
+                connectTimeout = 15_000
+                readTimeout = 15_000
+            }
+            try {
+                connection.inputStream.use { stream -> parsePodcastInfo(stream) }
+            } finally {
+                connection.disconnect()
+            }
+        }
+
+    private fun parsePodcastInfo(stream: InputStream): PodcastChannelInfo {
+        val parser = Xml.newPullParser().apply {
+            setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
+            setInput(stream, null)
+        }
+
+        var title = ""
+        var author = ""
+        var description = ""
+        var artworkUrl = ""
+        var inItem = false
+        var inChannelImage = false
+
+        var eventType = parser.eventType
+        while (eventType != XmlPullParser.END_DOCUMENT) {
+            val tag = parser.name?.lowercase() ?: ""
+            val ns = parser.namespace ?: ""
+            val isItunes = ns.contains("itunes")
+
+            when (eventType) {
+                XmlPullParser.START_TAG -> when {
+                    tag == "item" -> inItem = true
+                    inItem -> Unit
+                    isItunes && tag == "author" -> if (author.isEmpty()) author = safeNextText(parser)
+                    isItunes && tag == "image" -> {
+                        val href = parser.getAttributeValue(null, "href") ?: ""
+                        if (artworkUrl.isEmpty() && href.isNotBlank()) artworkUrl = href
+                    }
+                    tag == "title" -> if (title.isEmpty()) title = safeNextText(parser)
+                    tag == "description" -> if (description.isEmpty()) description = safeNextText(parser)
+                    tag == "author" -> if (author.isEmpty()) author = safeNextText(parser)
+                    tag == "image" -> inChannelImage = true
+                    inChannelImage && tag == "url" -> if (artworkUrl.isEmpty()) artworkUrl = safeNextText(parser)
+                }
+                XmlPullParser.END_TAG -> when {
+                    tag == "item" -> inItem = false
+                    tag == "image" && !inItem -> inChannelImage = false
+                }
+            }
+
+            if (inItem) break
+            eventType = parser.next()
+        }
+
+        return PodcastChannelInfo(
+            title = title.ifBlank { "Unknown Podcast" },
+            author = author,
+            description = description,
+            artworkUrl = artworkUrl
+        )
+    }
+
     open suspend fun fetchEpisodes(podcastId: String, feedUrl: String): List<Episode> =
         withContext(Dispatchers.IO) {
             val connection = URL(feedUrl).openConnection() as HttpURLConnection

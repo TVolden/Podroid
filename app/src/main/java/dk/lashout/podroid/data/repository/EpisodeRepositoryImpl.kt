@@ -23,14 +23,17 @@ class EpisodeRepositoryImpl @Inject constructor(
     override suspend fun fetchAndStoreEpisodes(podcastId: String, feedUrl: String): List<Episode> {
         val podcast = podcastDao.getById(podcastId)
         val episodes = rssParser.fetchEpisodes(podcastId, feedUrl)
-        episodeDao.insertNewEpisodes(episodes.map { it.toEntity() })
+        val insertResults = episodeDao.insertNewEpisodes(episodes.map { it.toEntity() })
         episodes.forEach { ep ->
             episodeDao.updateRssMeta(ep.id, ep.title, ep.description, ep.audioUrl, ep.durationSeconds, ep.publishedAt)
         }
-        return episodes.map { it.copy(
-            podcastTitle = podcast?.title ?: "",
-            podcastArtworkUrl = podcast?.artworkUrl ?: ""
-        )}
+        // Return only genuinely new episodes (insertNewEpisodes returns -1 for pre-existing rows)
+        return episodes.zip(insertResults)
+            .filter { (_, rowId) -> rowId != -1L }
+            .map { (ep, _) -> ep.copy(
+                podcastTitle = podcast?.title ?: "",
+                podcastArtworkUrl = podcast?.artworkUrl ?: ""
+            )}
     }
 
     override fun getEpisodesForPodcast(podcastId: String): Flow<List<Episode>> =

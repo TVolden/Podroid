@@ -1,5 +1,6 @@
 package dk.lashout.podroid.ui.screens.player
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,11 +43,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 private val SPEED_OPTIONS = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
@@ -60,6 +67,7 @@ fun PlayerScreen(
     val episode = state.currentEpisode
     val activePlaylist by viewModel.activePlaylist.collectAsState()
     val isTemporaryPlaylist = activePlaylist?.isTemporary == true
+    val queue by viewModel.queue.collectAsState()
 
     var showSaveDialog by remember { mutableStateOf(false) }
     var saveName by remember { mutableStateOf("") }
@@ -230,7 +238,63 @@ fun PlayerScreen(
                 }
             }
 
+            // Up Next queue
+            if (queue.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Up Next",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                queue.forEach { entry -> QueueRow(entry) }
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+private fun QueueRow(entry: QueueEntry) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                if (entry.isCurrent) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                else Color.Transparent
+            )
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (entry.isCurrent) {
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = "Now playing",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
+            )
+        } else {
+            Spacer(modifier = Modifier.width(16.dp))
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = entry.episode.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (entry.isCurrent) FontWeight.SemiBold else FontWeight.Normal,
+                color = if (entry.isCurrent) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "${formatEpisodeDate(entry.episode.publishedAt)}  •  ${formatEpisodeDuration(entry.episode.durationSeconds)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -241,4 +305,13 @@ private fun formatTime(ms: Long): String {
     val m = TimeUnit.SECONDS.toMinutes(totalSeconds) % 60
     val s = totalSeconds % 60
     return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
+}
+
+private fun formatEpisodeDate(epochMs: Long): String =
+    SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(epochMs))
+
+private fun formatEpisodeDuration(seconds: Long): String {
+    val h = TimeUnit.SECONDS.toHours(seconds)
+    val m = TimeUnit.SECONDS.toMinutes(seconds) % 60
+    return if (h > 0) "${h}h ${m}m" else "${m}m"
 }

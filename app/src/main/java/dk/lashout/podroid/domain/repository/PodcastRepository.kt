@@ -10,4 +10,5 @@ interface PodcastRepository {
     suspend fun subscribe(podcast: Podcast)
     suspend fun unsubscribe(podcastId: String)
     suspend fun upsertPodcast(podcast: Podcast)
+    suspend fun importFromFeedUrl(feedUrl: String): Podcast
 }

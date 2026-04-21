@@ -12,18 +12,18 @@ class CurrentPlaybackRepository @Inject constructor() {
     private val _activePlaylistId = MutableStateFlow<String?>(null)
     val activePlaylistId: StateFlow<String?> = _activePlaylistId.asStateFlow()
 
-    var activeEpisodeIndex: Int = 0
-        private set
+    private val _activeEpisodeIndex = MutableStateFlow(0)
+    val activeEpisodeIndex: StateFlow<Int> = _activeEpisodeIndex.asStateFlow()
 
     fun setActive(playlistId: String, startIndex: Int = 0) {
         _activePlaylistId.value = playlistId
-        activeEpisodeIndex = startIndex
+        _activeEpisodeIndex.value = startIndex
     }
 
-    fun advanceIndex() { activeEpisodeIndex++ }
+    fun advanceIndex() { _activeEpisodeIndex.value++ }
 
     fun clear() {
         _activePlaylistId.value = null
-        activeEpisodeIndex = 0
+        _activeEpisodeIndex.value = 0
     }
 }

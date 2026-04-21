@@ -15,14 +15,16 @@ class RefreshFeedsWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val podcastRepository: PodcastRepository,
-    private val episodeRepository: EpisodeRepository
+    private val episodeRepository: EpisodeRepository,
+    private val notifier: NewEpisodeNotifier
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         return try {
             val subscriptions = podcastRepository.getSubscriptions().first()
             subscriptions.forEach { podcast ->
-                episodeRepository.fetchAndStoreEpisodes(podcast.id, podcast.feedUrl)
+                val newEpisodes = episodeRepository.fetchAndStoreEpisodes(podcast.id, podcast.feedUrl)
+                notifier.notify(podcast.title, newEpisodes)
             }
             Result.success()
         } catch (e: Exception) {

@@ -180,7 +180,7 @@ fun EpisodeRow(
 }
 
 private fun formatDate(epochMs: Long): String =
-    SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(epochMs))
+    SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(epochMs))
 
 private fun formatDuration(seconds: Long): String {
     val h = TimeUnit.SECONDS.toHours(seconds)

@@ -151,7 +151,7 @@ class PlaybackController @Inject constructor(
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             val mediaId = mediaItem?.mediaId ?: return
-            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+            if (currentEpisode?.id != mediaId) {
                 scope.launch {
                     val episode = episodeRepository.getEpisodeWithPodcast(mediaId)
                     if (episode != null) { currentEpisode = episode; updateState() }

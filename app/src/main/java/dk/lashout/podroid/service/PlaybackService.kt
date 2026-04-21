@@ -89,7 +89,7 @@ class PlaybackService : MediaLibraryService() {
 
         val next = if (playlistId != null) {
             val entries = playlistRepository.getPlaylistEntriesSync(playlistId)
-            val nextIndex = currentPlayback.activeEpisodeIndex + 1
+            val nextIndex = currentPlayback.activeEpisodeIndex.value + 1
             entries.getOrNull(nextIndex)?.episode?.also { currentPlayback.advanceIndex() }
         } else {
             val episode = episodeRepository.getEpisodeById(episodeId) ?: return

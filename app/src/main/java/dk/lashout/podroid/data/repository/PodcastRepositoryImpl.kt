@@ -3,6 +3,7 @@ package dk.lashout.podroid.data.repository
 import dk.lashout.podroid.data.local.dao.PodcastDao
 import dk.lashout.podroid.data.local.entity.PodcastEntity
 import dk.lashout.podroid.data.remote.api.ItunesApiService
+import dk.lashout.podroid.data.rss.RssParserWrapper
 import dk.lashout.podroid.domain.model.Podcast
 import dk.lashout.podroid.domain.repository.PodcastRepository
 import kotlinx.coroutines.flow.Flow
@@ -13,7 +14,8 @@ import javax.inject.Singleton
 @Singleton
 class PodcastRepositoryImpl @Inject constructor(
     private val itunesApi: ItunesApiService,
-    private val podcastDao: PodcastDao
+    private val podcastDao: PodcastDao,
+    private val rssParser: RssParserWrapper
 ) : PodcastRepository {
 
     override suspend fun searchPodcasts(query: String): List<Podcast> {
@@ -49,6 +51,28 @@ class PodcastRepositoryImpl @Inject constructor(
 
     override suspend fun upsertPodcast(podcast: Podcast) {
         podcastDao.upsert(podcast.toEntity())
+    }
+
+    override suspend fun importFromFeedUrl(feedUrl: String): Podcast {
+        val normalizedUrl = feedUrl.trim()
+        val id = "feed:${normalizedUrl.hashCode()}"
+        val existing = podcastDao.getById(id)
+        if (existing != null) {
+            if (!existing.isSubscribed) podcastDao.subscribe(id)
+            return existing.toDomain().copy(isSubscribed = true)
+        }
+        val info = rssParser.fetchPodcastInfo(normalizedUrl)
+        val podcast = Podcast(
+            id = id,
+            title = info.title,
+            author = info.author,
+            description = info.description,
+            artworkUrl = info.artworkUrl,
+            feedUrl = normalizedUrl,
+            isSubscribed = true
+        )
+        podcastDao.upsert(podcast.toEntity(isSubscribed = true))
+        return podcast
     }
 
     private fun PodcastEntity.toDomain() = Podcast(
