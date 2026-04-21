@@ -1,0 +1,4 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Window theme host for Compose activity; ActionBar is handled by Compose -->
+    <style name="Theme.Podroid" parent="Theme.AppCompat.DayNight.NoActionBar" />
+</resources>
