@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Forward30
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
+import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import dk.lashout.podroid.ui.components.HtmlText
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -61,6 +63,7 @@ private val SPEED_OPTIONS = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
 @Composable
 fun PlayerScreen(
     onBack: () -> Unit,
+    onTranscriptClick: ((episodeId: String) -> Unit)? = null,
     viewModel: PlayerViewModel = hiltViewModel()
 ) {
     val state by viewModel.playerState.collectAsState()
@@ -106,6 +109,12 @@ fun PlayerScreen(
                     }
                 },
                 actions = {
+                    val currentEpisode = state.currentEpisode
+                    if (currentEpisode?.transcriptUrl != null && onTranscriptClick != null) {
+                        IconButton(onClick = { onTranscriptClick(currentEpisode.id) }) {
+                            Icon(Icons.Default.Article, contentDescription = "Transcript")
+                        }
+                    }
                     if (isTemporaryPlaylist) {
                         IconButton(onClick = { saveName = ""; showSaveDialog = true }) {
                             Icon(Icons.Default.Save, contentDescription = "Save playlist")
@@ -165,6 +174,27 @@ fun PlayerScreen(
                 overflow = TextOverflow.Ellipsis
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "${formatEpisodeDate(episode.publishedAt)}  •  ${formatEpisodeDuration(episode.durationSeconds)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (episode.description.isNotBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                HtmlText(
+                    text = episode.description,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    maxLines = 3,
+                    expandable = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // Progress bar
@@ -202,7 +232,7 @@ fun PlayerScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = viewModel::skipBack, modifier = Modifier.size(56.dp)) {
-                    Icon(Icons.Default.Replay10, contentDescription = "Skip back 15s", modifier = Modifier.size(36.dp))
+                    Icon(Icons.Default.Replay10, contentDescription = "Skip back 10s", modifier = Modifier.size(36.dp))
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 IconButton(
@@ -315,3 +345,4 @@ private fun formatEpisodeDuration(seconds: Long): String {
     val m = TimeUnit.SECONDS.toMinutes(seconds) % 60
     return if (h > 0) "${h}h ${m}m" else "${m}m"
 }
+

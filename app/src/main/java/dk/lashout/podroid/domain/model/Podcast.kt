@@ -7,5 +7,6 @@ data class Podcast(
     val description: String,
     val artworkUrl: String,
     val feedUrl: String,
-    val isSubscribed: Boolean = false
+    val isSubscribed: Boolean = false,
+    val notificationsEnabled: Boolean = true
 )

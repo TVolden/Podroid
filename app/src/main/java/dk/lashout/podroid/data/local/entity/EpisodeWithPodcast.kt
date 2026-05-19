@@ -15,5 +15,6 @@ data class EpisodeWithPodcast(
     val playbackPositionMs: Long,
     val playedAt: Long,
     @ColumnInfo(name = "podcast_title") val podcastTitle: String,
-    @ColumnInfo(name = "podcast_artwork_url") val podcastArtworkUrl: String
+    @ColumnInfo(name = "podcast_artwork_url") val podcastArtworkUrl: String,
+    val transcriptUrl: String? = null
 )

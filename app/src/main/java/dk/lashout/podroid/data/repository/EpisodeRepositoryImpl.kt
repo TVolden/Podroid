@@ -25,7 +25,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         val episodes = rssParser.fetchEpisodes(podcastId, feedUrl)
         val insertResults = episodeDao.insertNewEpisodes(episodes.map { it.toEntity() })
         episodes.forEach { ep ->
-            episodeDao.updateRssMeta(ep.id, ep.title, ep.description, ep.audioUrl, ep.durationSeconds, ep.publishedAt)
+            episodeDao.updateRssMeta(ep.id, ep.title, ep.description, ep.audioUrl, ep.durationSeconds, ep.publishedAt, ep.transcriptUrl)
         }
         // Return only genuinely new episodes (insertNewEpisodes returns -1 for pre-existing rows)
         return episodes.zip(insertResults)
@@ -87,7 +87,8 @@ class EpisodeRepositoryImpl @Inject constructor(
         isPlayed = isPlayed,
         playbackPositionMs = playbackPositionMs,
         podcastTitle = podcastTitle,
-        podcastArtworkUrl = podcastArtworkUrl
+        podcastArtworkUrl = podcastArtworkUrl,
+        transcriptUrl = transcriptUrl
     )
 
     private fun EpisodeEntity.toDomain() = Episode(
@@ -99,7 +100,8 @@ class EpisodeRepositoryImpl @Inject constructor(
         durationSeconds = durationSeconds,
         publishedAt = publishedAt,
         isPlayed = isPlayed,
-        playbackPositionMs = playbackPositionMs
+        playbackPositionMs = playbackPositionMs,
+        transcriptUrl = transcriptUrl
     )
 
     private fun Episode.toEntity() = EpisodeEntity(
@@ -111,6 +113,7 @@ class EpisodeRepositoryImpl @Inject constructor(
         durationSeconds = durationSeconds,
         publishedAt = publishedAt,
         isPlayed = isPlayed,
-        playbackPositionMs = playbackPositionMs
+        playbackPositionMs = playbackPositionMs,
+        transcriptUrl = transcriptUrl
     )
 }

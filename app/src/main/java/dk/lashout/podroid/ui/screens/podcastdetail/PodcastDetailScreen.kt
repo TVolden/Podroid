@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,6 +42,7 @@ import dk.lashout.podroid.domain.model.Episode
 import dk.lashout.podroid.domain.model.Podcast
 import dk.lashout.podroid.ui.components.AddToPlaylistDialog
 import dk.lashout.podroid.ui.components.EpisodeRow
+import dk.lashout.podroid.ui.components.HtmlText
 import dk.lashout.podroid.ui.components.MultiSelectActionBar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -135,8 +138,27 @@ fun PodcastDetailScreen(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 if (p.isSubscribed) {
-                                    OutlinedButton(onClick = viewModel::unsubscribe) {
-                                        Text("Unsubscribe")
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        OutlinedButton(onClick = viewModel::unsubscribe) {
+                                            Text("Unsubscribe")
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        IconButton(onClick = viewModel::toggleNotifications) {
+                                            Icon(
+                                                imageVector = if (p.notificationsEnabled)
+                                                    Icons.Default.Notifications
+                                                else
+                                                    Icons.Default.NotificationsOff,
+                                                contentDescription = if (p.notificationsEnabled)
+                                                    "Disable notifications"
+                                                else
+                                                    "Enable notifications",
+                                                tint = if (p.notificationsEnabled)
+                                                    MaterialTheme.colorScheme.primary
+                                                else
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 } else {
                                     Button(onClick = viewModel::subscribe) {
@@ -147,13 +169,13 @@ fun PodcastDetailScreen(
                         }
                     }
                     item {
-                        Text(
+                        HtmlText(
                             text = p.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
                             maxLines = 3,
-                            overflow = TextOverflow.Ellipsis
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                         )
                         HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
                     }

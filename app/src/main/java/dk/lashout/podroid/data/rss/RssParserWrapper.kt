@@ -119,6 +119,7 @@ open class RssParserWrapper @Inject constructor() {
         var guid = ""
         var pubDate = ""
         var duration = ""
+        var transcriptUrl = ""
 
         var eventType = parser.eventType
         while (eventType != XmlPullParser.END_DOCUMENT) {
@@ -129,7 +130,7 @@ open class RssParserWrapper @Inject constructor() {
                 XmlPullParser.START_TAG -> {
                     if (tag == "item") {
                         inItem = true
-                        title = ""; description = ""; audioUrl = ""; guid = ""; pubDate = ""; duration = ""
+                        title = ""; description = ""; audioUrl = ""; guid = ""; pubDate = ""; duration = ""; transcriptUrl = ""
                     } else if (inItem) {
                         when (tag) {
                             "enclosure" ->
@@ -140,6 +141,13 @@ open class RssParserWrapper @Inject constructor() {
                             "pubdate" -> pubDate = safeNextText(parser)
                             "duration" -> if (ns.contains("itunes") || ns.isEmpty()) {
                                 duration = safeNextText(parser)
+                            }
+                            "transcript" -> if (ns.contains("podcastindex") || ns.contains("podcast")) {
+                                val url = parser.getAttributeValue(null, "url") ?: ""
+                                val type = parser.getAttributeValue(null, "type") ?: ""
+                                if (transcriptUrl.isEmpty() && url.isNotBlank() && isSupportedTranscriptType(type)) {
+                                    transcriptUrl = url
+                                }
                             }
                         }
                     }
@@ -158,7 +166,8 @@ open class RssParserWrapper @Inject constructor() {
                                     durationSeconds = DurationParser.parse(duration),
                                     publishedAt = parseDate(pubDate),
                                     isPlayed = false,
-                                    playbackPositionMs = 0L
+                                    playbackPositionMs = 0L,
+                                    transcriptUrl = transcriptUrl.ifBlank { null }
                                 )
                             )
                         }
@@ -170,6 +179,10 @@ open class RssParserWrapper @Inject constructor() {
         }
         return episodes
     }
+
+    private fun isSupportedTranscriptType(type: String): Boolean = type.lowercase() in setOf(
+        "text/vtt", "application/vtt", "application/json", "text/srt", "text/plain"
+    )
 
     /** Reads the text content of the current tag, guarding against mixed-content / empty tags. */
     private fun safeNextText(parser: XmlPullParser): String = try {

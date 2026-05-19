@@ -14,6 +14,7 @@ import dk.lashout.podroid.domain.model.AutoplayOrder
 import dk.lashout.podroid.domain.model.Episode
 import dk.lashout.podroid.domain.model.PlayerState
 import dk.lashout.podroid.domain.repository.EpisodeRepository
+import dk.lashout.podroid.domain.repository.LastPlayedRepository
 import dk.lashout.podroid.domain.repository.PlaylistRepository
 import dk.lashout.podroid.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
@@ -37,7 +38,8 @@ class PlaybackController @Inject constructor(
     private val episodeRepository: EpisodeRepository,
     private val playlistRepository: PlaylistRepository,
     private val settingsRepository: SettingsRepository,
-    private val currentPlayback: CurrentPlaybackRepository
+    private val currentPlayback: CurrentPlaybackRepository,
+    private val lastPlayedRepository: LastPlayedRepository
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -47,7 +49,8 @@ class PlaybackController @Inject constructor(
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
     private var positionPollingJob: Job? = null
-    private var currentEpisode: Episode? = null
+    private var saveLastPlayedJob: Job? = null
+    @Volatile private var currentEpisode: Episode? = null
 
     fun connect() {
         val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
@@ -56,6 +59,7 @@ class PlaybackController @Inject constructor(
             controller = controllerFuture?.get()
             controller?.addListener(playerListener)
             startPositionPolling()
+            restoreLastEpisode()
         }, Executors.newSingleThreadExecutor())
     }
 
@@ -113,24 +117,27 @@ class PlaybackController @Inject constructor(
         }
     }
 
+    private fun restoreLastEpisode() {
+        if (currentEpisode != null) return
+        scope.launch(Dispatchers.IO) {
+            val lastId = lastPlayedRepository.getLastEpisodeId() ?: return@launch
+            val episode = episodeRepository.getEpisodeWithPodcast(lastId) ?: return@launch
+            if (currentEpisode != null) return@launch
+            currentEpisode = episode
+            launch(Dispatchers.Main) {
+                val c = controller ?: return@launch
+                c.setMediaItem(episode.toMediaItem(), episode.playbackPositionMs)
+                c.prepare()
+                updateState()
+            }
+        }
+    }
+
     fun playEpisode(episode: Episode) {
+        saveLastPlayedJob?.cancel()
+        saveLastPlayedJob = scope.launch(Dispatchers.IO) { lastPlayedRepository.setLastEpisodeId(episode.id) }
         currentEpisode = episode
-        val mediaItem = MediaItem.Builder()
-            .setUri(episode.audioUrl)
-            .setMediaId(episode.id)
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle(episode.title)
-                    .setArtist(episode.podcastTitle)
-                    .setArtworkUri(
-                        if (episode.podcastArtworkUrl.isNotBlank())
-                            android.net.Uri.parse(episode.podcastArtworkUrl)
-                        else null
-                    )
-                    .build()
-            )
-            .build()
-        controller?.setMediaItem(mediaItem, episode.playbackPositionMs)
+        controller?.setMediaItem(episode.toMediaItem(), episode.playbackPositionMs)
         controller?.prepare()
         controller?.play()
     }
@@ -138,7 +145,7 @@ class PlaybackController @Inject constructor(
     fun play() { controller?.play() }
     fun pause() { controller?.pause() }
     fun seekTo(positionMs: Long) { controller?.seekTo(positionMs) }
-    fun skipBack(ms: Long = 15_000) { controller?.let { seekTo(maxOf(0, it.currentPosition - ms)) } }
+    fun skipBack(ms: Long = 10_000) { controller?.let { seekTo(maxOf(0, it.currentPosition - ms)) } }
     fun skipForward(ms: Long = 30_000) { controller?.let { seekTo(it.currentPosition + ms) } }
     fun setSpeed(speed: Float) { controller?.setPlaybackParameters(PlaybackParameters(speed)) }
 
@@ -154,7 +161,11 @@ class PlaybackController @Inject constructor(
             if (currentEpisode?.id != mediaId) {
                 scope.launch {
                     val episode = episodeRepository.getEpisodeWithPodcast(mediaId)
-                    if (episode != null) { currentEpisode = episode; updateState() }
+                    if (episode != null) {
+                        currentEpisode = episode
+                        lastPlayedRepository.setLastEpisodeId(episode.id)
+                        updateState()
+                    }
                 }
             }
         }

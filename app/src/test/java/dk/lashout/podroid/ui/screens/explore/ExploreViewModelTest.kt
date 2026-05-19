@@ -2,6 +2,7 @@ package dk.lashout.podroid.ui.screens.explore
 
 import dk.lashout.podroid.domain.model.Podcast
 import dk.lashout.podroid.domain.repository.PodcastRepository
+import dk.lashout.podroid.domain.usecase.ImportPodcastUseCase
 import dk.lashout.podroid.domain.usecase.SearchPodcastsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -97,9 +98,10 @@ class ExploreViewModelTest {
         results: List<Podcast> = emptyList(),
         error: Throwable? = null,
         onSearch: () -> Unit = {}
-    ) = ExploreViewModel(
-        SearchPodcastsUseCase(FakePodcastRepository(results, error, onSearch))
-    )
+    ): ExploreViewModel {
+        val repo = FakePodcastRepository(results, error, onSearch)
+        return ExploreViewModel(SearchPodcastsUseCase(repo), ImportPodcastUseCase(repo))
+    }
 
     private fun podcast(id: String) = Podcast(
         id = id, title = "Podcast $id", author = "Author",
@@ -122,5 +124,7 @@ class ExploreViewModelTest {
         override suspend fun subscribe(podcast: Podcast) = Unit
         override suspend fun unsubscribe(podcastId: String) = Unit
         override suspend fun upsertPodcast(podcast: Podcast) = Unit
+        override suspend fun importFromFeedUrl(feedUrl: String): Podcast = throw UnsupportedOperationException()
+        override suspend fun setNotificationsEnabled(podcastId: String, enabled: Boolean) = Unit
     }
 }

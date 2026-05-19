@@ -12,6 +12,7 @@ import dk.lashout.podroid.data.local.dao.EpisodeDao
 import dk.lashout.podroid.data.local.dao.PlaylistDao
 import dk.lashout.podroid.data.local.dao.PlaylistEpisodeDao
 import dk.lashout.podroid.data.local.dao.PodcastDao
+import dk.lashout.podroid.data.local.dao.TranscriptDao
 import javax.inject.Singleton
 
 @Module
@@ -22,7 +23,12 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "podroid.db")
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
+            .addMigrations(
+                AppDatabase.MIGRATION_1_2,
+                AppDatabase.MIGRATION_2_3,
+                AppDatabase.MIGRATION_3_4,
+                AppDatabase.MIGRATION_4_5
+            )
             .build()
 
     @Provides
@@ -36,4 +42,7 @@ object DatabaseModule {
 
     @Provides
     fun providePlaylistEpisodeDao(db: AppDatabase): PlaylistEpisodeDao = db.playlistEpisodeDao()
+
+    @Provides
+    fun provideTranscriptDao(db: AppDatabase): TranscriptDao = db.transcriptDao()
 }

@@ -17,12 +17,14 @@ interface EpisodeDao {
     @Query("""
         UPDATE episodes
         SET title = :title, description = :description, audioUrl = :audioUrl,
-            durationSeconds = :durationSeconds, publishedAt = :publishedAt
+            durationSeconds = :durationSeconds, publishedAt = :publishedAt,
+            transcriptUrl = :transcriptUrl
         WHERE id = :id
     """)
     suspend fun updateRssMeta(
         id: String, title: String, description: String,
-        audioUrl: String, durationSeconds: Long, publishedAt: Long
+        audioUrl: String, durationSeconds: Long, publishedAt: Long,
+        transcriptUrl: String?
     )
 
     @Query("SELECT * FROM episodes WHERE podcastId = :podcastId ORDER BY publishedAt DESC")

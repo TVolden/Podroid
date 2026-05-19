@@ -11,5 +11,6 @@ data class PodcastEntity(
     val description: String,
     val artworkUrl: String,
     val feedUrl: String,
-    val isSubscribed: Boolean
+    val isSubscribed: Boolean,
+    val notificationsEnabled: Boolean = true
 )

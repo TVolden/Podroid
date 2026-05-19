@@ -25,4 +25,7 @@ interface PodcastDao {
 
     @Query("UPDATE podcasts SET isSubscribed = 0 WHERE id = :podcastId")
     suspend fun unsubscribe(podcastId: String): Int
+
+    @Query("UPDATE podcasts SET notificationsEnabled = :enabled WHERE id = :podcastId")
+    suspend fun setNotificationsEnabled(podcastId: String, enabled: Boolean): Int
 }

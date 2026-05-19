@@ -53,9 +53,13 @@ class PodcastRepositoryImpl @Inject constructor(
         podcastDao.upsert(podcast.toEntity())
     }
 
+    override suspend fun setNotificationsEnabled(podcastId: String, enabled: Boolean) {
+        podcastDao.setNotificationsEnabled(podcastId, enabled)
+    }
+
     override suspend fun importFromFeedUrl(feedUrl: String): Podcast {
         val normalizedUrl = feedUrl.trim()
-        val id = "feed:${normalizedUrl.hashCode()}"
+        val id = "feed:${normalizedUrl.hashCode().and(Int.MAX_VALUE)}"
         val existing = podcastDao.getById(id)
         if (existing != null) {
             if (!existing.isSubscribed) podcastDao.subscribe(id)
@@ -82,7 +86,8 @@ class PodcastRepositoryImpl @Inject constructor(
         description = description,
         artworkUrl = artworkUrl,
         feedUrl = feedUrl,
-        isSubscribed = isSubscribed
+        isSubscribed = isSubscribed,
+        notificationsEnabled = notificationsEnabled
     )
 
     private fun Podcast.toEntity(isSubscribed: Boolean = this.isSubscribed) = PodcastEntity(
@@ -92,6 +97,7 @@ class PodcastRepositoryImpl @Inject constructor(
         description = description,
         artworkUrl = artworkUrl,
         feedUrl = feedUrl,
-        isSubscribed = isSubscribed
+        isSubscribed = isSubscribed,
+        notificationsEnabled = notificationsEnabled
     )
 }

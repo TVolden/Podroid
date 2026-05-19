@@ -28,5 +28,6 @@ data class EpisodeEntity(
     val isPlayed: Boolean = false,
     val playbackPositionMs: Long = 0L,
     /** Epoch millis when this episode was last marked as played. 0 if never played. */
-    val playedAt: Long = 0L
+    val playedAt: Long = 0L,
+    val transcriptUrl: String? = null
 )

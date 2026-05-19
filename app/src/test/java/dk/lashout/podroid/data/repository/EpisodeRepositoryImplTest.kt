@@ -124,7 +124,8 @@ class EpisodeRepositoryImplTest {
 
         override suspend fun updateRssMeta(
             id: String, title: String, description: String,
-            audioUrl: String, durationSeconds: Long, publishedAt: Long
+            audioUrl: String, durationSeconds: Long, publishedAt: Long,
+            transcriptUrl: String?
         ) {
             store[id] = store[id]?.copy(
                 title = title, description = description,
@@ -153,5 +154,6 @@ class EpisodeRepositoryImplTest {
         override suspend fun getById(id: String): PodcastEntity? = null
         override suspend fun subscribe(podcastId: String) = 0
         override suspend fun unsubscribe(podcastId: String) = 0
+        override suspend fun setNotificationsEnabled(podcastId: String, enabled: Boolean) = 0
     }
 }

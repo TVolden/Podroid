@@ -3,7 +3,6 @@ package dk.lashout.podroid.service
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaLibraryService
@@ -96,23 +95,7 @@ class PlaybackService : MediaLibraryService() {
             episodeRepository.getNextEpisodeInPodcast(episode.podcastId, episode.publishedAt, settings.autoplayOrder)
         } ?: return
 
-        val mediaItem = MediaItem.Builder()
-            .setUri(next.audioUrl)
-            .setMediaId(next.id)
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle(next.title)
-                    .setArtist(next.podcastTitle)
-                    .setArtworkUri(
-                        if (next.podcastArtworkUrl.isNotBlank())
-                            android.net.Uri.parse(next.podcastArtworkUrl)
-                        else null
-                    )
-                    .build()
-            )
-            .build()
-
-        player.setMediaItem(mediaItem, next.playbackPositionMs)
+        player.setMediaItem(next.toMediaItem(), next.playbackPositionMs)
         player.prepare()
         player.play()
     }

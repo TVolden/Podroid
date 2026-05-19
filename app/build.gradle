@@ -7,6 +7,11 @@ plugins {
     id 'jacoco'
 }
 
+def localProps = new Properties()
+if (rootProject.file("local.properties").exists()) {
+    localProps.load(rootProject.file("local.properties").newDataInputStream())
+}
+
 android {
     namespace "dk.lashout.podroid"
     compileSdk 34
@@ -19,6 +24,7 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField "String", "GEMINI_API_KEY", "\"${localProps['GEMINI_API_KEY'] ?: ''}\""
     }
 
     buildTypes {
@@ -36,6 +42,7 @@ android {
     }
     buildFeatures {
         compose true
+        buildConfig true
     }
 
     testOptions {

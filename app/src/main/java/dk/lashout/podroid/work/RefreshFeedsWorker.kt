@@ -8,6 +8,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dk.lashout.podroid.domain.repository.EpisodeRepository
 import dk.lashout.podroid.domain.repository.PodcastRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 
 @HiltWorker
@@ -20,15 +23,21 @@ class RefreshFeedsWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        return try {
-            val subscriptions = podcastRepository.getSubscriptions().first()
-            subscriptions.forEach { podcast ->
-                val newEpisodes = episodeRepository.fetchAndStoreEpisodes(podcast.id, podcast.feedUrl)
-                notifier.notify(podcast.title, newEpisodes)
-            }
-            Result.success()
+        val subscriptions = try {
+            podcastRepository.getSubscriptions().first()
         } catch (e: Exception) {
-            Result.retry()
+            return Result.retry()
         }
+        coroutineScope {
+            subscriptions.map { podcast ->
+                async {
+                    try {
+                        val newEpisodes = episodeRepository.fetchAndStoreEpisodes(podcast.id, podcast.feedUrl)
+                        if (podcast.notificationsEnabled) notifier.notify(podcast.title, newEpisodes)
+                    } catch (_: Exception) { }
+                }
+            }.awaitAll()
+        }
+        return Result.success()
     }
 }

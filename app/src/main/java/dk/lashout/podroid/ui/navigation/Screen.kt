@@ -14,6 +14,9 @@ sealed class Screen(val route: String) {
     object PlaylistDetail : Screen("playlist_detail/{playlistId}") {
         fun createRoute(playlistId: String) = "playlist_detail/$playlistId"
     }
+    object Transcript : Screen("transcript/{episodeId}") {
+        fun createRoute(episodeId: String) = "transcript/${android.net.Uri.encode(episodeId)}"
+    }
 }
 
 val bottomNavScreens = listOf(

@@ -4,11 +4,13 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import dk.lashout.podroid.data.remote.api.GeminiApiService
 import dk.lashout.podroid.data.remote.api.ItunesApiService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -35,4 +37,18 @@ object NetworkModule {
     @Singleton
     fun provideItunesApiService(retrofit: Retrofit): ItunesApiService =
         retrofit.create(ItunesApiService::class.java)
+
+    @Provides
+    @Singleton
+    @Named("gemini")
+    fun provideGeminiRetrofit(okHttpClient: OkHttpClient): Retrofit = Retrofit.Builder()
+        .baseUrl("https://generativelanguage.googleapis.com/")
+        .client(okHttpClient)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    @Provides
+    @Singleton
+    fun provideGeminiApiService(@Named("gemini") retrofit: Retrofit): GeminiApiService =
+        retrofit.create(GeminiApiService::class.java)
 }

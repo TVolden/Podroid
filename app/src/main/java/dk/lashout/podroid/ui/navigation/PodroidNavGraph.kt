@@ -21,6 +21,7 @@ import dk.lashout.podroid.ui.screens.playlist.PlaylistScreen
 import dk.lashout.podroid.ui.screens.podcastdetail.PodcastDetailScreen
 import dk.lashout.podroid.ui.screens.settings.SettingsScreen
 import dk.lashout.podroid.ui.screens.subscriptions.SubscriptionsScreen
+import dk.lashout.podroid.ui.screens.transcript.TranscriptScreen
 
 @Composable
 fun PodroidNavGraph(
@@ -109,7 +110,21 @@ fun PodroidNavGraph(
         }
 
         composable(Screen.Player.route) {
-            PlayerScreen(onBack = { navController.popBackStack() })
+            PlayerScreen(
+                onBack = { navController.popBackStack() },
+                onTranscriptClick = { episodeId ->
+                    navController.navigate(Screen.Transcript.createRoute(episodeId))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.Transcript.route,
+            arguments = listOf(navArgument("episodeId") {
+                type = NavType.StringType
+            })
+        ) {
+            TranscriptScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Screen.History.route) {

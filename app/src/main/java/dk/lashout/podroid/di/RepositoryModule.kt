@@ -5,13 +5,17 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dk.lashout.podroid.data.repository.EpisodeRepositoryImpl
+import dk.lashout.podroid.data.repository.LastPlayedRepositoryImpl
 import dk.lashout.podroid.data.repository.PlaylistRepositoryImpl
 import dk.lashout.podroid.data.repository.PodcastRepositoryImpl
 import dk.lashout.podroid.data.repository.SettingsRepositoryImpl
+import dk.lashout.podroid.data.repository.TranscriptRepositoryImpl
 import dk.lashout.podroid.domain.repository.EpisodeRepository
+import dk.lashout.podroid.domain.repository.LastPlayedRepository
 import dk.lashout.podroid.domain.repository.PlaylistRepository
 import dk.lashout.podroid.domain.repository.PodcastRepository
 import dk.lashout.podroid.domain.repository.SettingsRepository
+import dk.lashout.podroid.domain.repository.TranscriptRepository
 import javax.inject.Singleton
 
 // Note: @Provides is used instead of @Binds intentionally.
@@ -38,4 +42,12 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository = impl
+
+    @Provides
+    @Singleton
+    fun provideLastPlayedRepository(impl: LastPlayedRepositoryImpl): LastPlayedRepository = impl
+
+    @Provides
+    @Singleton
+    fun provideTranscriptRepository(impl: TranscriptRepositoryImpl): TranscriptRepository = impl
 }

@@ -11,5 +11,6 @@ data class Episode(
     val durationSeconds: Long,
     val publishedAt: Long,
     val isPlayed: Boolean = false,
-    val playbackPositionMs: Long = 0L
+    val playbackPositionMs: Long = 0L,
+    val transcriptUrl: String? = null
 )

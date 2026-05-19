@@ -16,6 +16,7 @@ import dk.lashout.podroid.domain.usecase.GetPlaylistsUseCase
 import dk.lashout.podroid.domain.usecase.MarkEpisodesPlayedUseCase
 import dk.lashout.podroid.domain.usecase.MarkEpisodesUnplayedUseCase
 import dk.lashout.podroid.domain.usecase.ObserveEpisodesForPodcastUseCase
+import dk.lashout.podroid.domain.usecase.SetPodcastNotificationsUseCase
 import dk.lashout.podroid.domain.usecase.SubscribeToPodcastUseCase
 import dk.lashout.podroid.domain.usecase.ToggleEpisodePlayedUseCase
 import dk.lashout.podroid.domain.usecase.UnsubscribeFromPodcastUseCase
@@ -43,7 +44,8 @@ class PodcastDetailViewModel @Inject constructor(
     private val createPlaylist: CreatePlaylistUseCase,
     getPlaylists: GetPlaylistsUseCase,
     private val markEpisodesPlayed: MarkEpisodesPlayedUseCase,
-    private val markEpisodesUnplayed: MarkEpisodesUnplayedUseCase
+    private val markEpisodesUnplayed: MarkEpisodesUnplayedUseCase,
+    private val setPodcastNotifications: SetPodcastNotificationsUseCase
 ) : ViewModel() {
 
     private val podcastId: String = run {
@@ -100,12 +102,27 @@ class PodcastDetailViewModel @Inject constructor(
 
     fun subscribe() {
         val p = _podcast.value ?: return
-        viewModelScope.launch { subscribeToPodcast(p); _podcast.value = p.copy(isSubscribed = true) }
+        viewModelScope.launch {
+            subscribeToPodcast(p)
+            _podcast.update { it?.copy(isSubscribed = true) }
+        }
     }
 
     fun unsubscribe() {
         val p = _podcast.value ?: return
-        viewModelScope.launch { unsubscribeFromPodcast(p.id); _podcast.value = p.copy(isSubscribed = false) }
+        viewModelScope.launch {
+            unsubscribeFromPodcast(p.id)
+            _podcast.update { it?.copy(isSubscribed = false) }
+        }
+    }
+
+    fun toggleNotifications() {
+        val p = _podcast.value ?: return
+        val enabled = !p.notificationsEnabled
+        viewModelScope.launch {
+            setPodcastNotifications(p.id, enabled)
+            _podcast.update { it?.copy(notificationsEnabled = enabled) }
+        }
     }
 
     fun togglePlayed(episode: Episode) { viewModelScope.launch { toggleEpisodePlayed(episode) } }
