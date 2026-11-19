@@ -55,6 +55,10 @@ fun PodroidNavGraph(
                 onPodcastClick = { podcast ->
                     val json = Uri.encode(gson.toJson(podcast))
                     navController.navigate("${Screen.PodcastDetail.route.substringBefore("{")}$json")
+                },
+                onEpisodeClick = { episode ->
+                    mediaController.playEpisode(episode)
+                    navController.navigate(Screen.Player.route)
                 }
             )
         }

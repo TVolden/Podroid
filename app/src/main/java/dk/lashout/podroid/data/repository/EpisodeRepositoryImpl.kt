@@ -63,6 +63,10 @@ class EpisodeRepositoryImpl @Inject constructor(
     override suspend fun getEpisodeWithPodcast(episodeId: String): Episode? =
         episodeDao.getByIdWithPodcast(episodeId)?.toDomain()
 
+    override suspend fun storeEpisode(episode: Episode) {
+        episodeDao.insertNewEpisodes(listOf(episode.toEntity()))
+    }
+
     override suspend fun getNextEpisodeInPodcast(
         podcastId: String,
         currentPublishedAt: Long,

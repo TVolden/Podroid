@@ -25,6 +25,8 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "GEMINI_API_KEY", "\"${localProps['GEMINI_API_KEY'] ?: ''}\""
+        buildConfigField "String", "PODCAST_INDEX_API_KEY", "\"${localProps['PODCAST_INDEX_API_KEY'] ?: ''}\""
+        buildConfigField "String", "PODCAST_INDEX_API_SECRET", "\"${localProps['PODCAST_INDEX_API_SECRET'] ?: ''}\""
     }
 
     buildTypes {

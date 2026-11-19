@@ -1,8 +1,24 @@
 package dk.lashout.podroid.ui.screens.explore
 
+import dk.lashout.podroid.data.remote.api.GeminiApiService
+import dk.lashout.podroid.data.remote.api.ItunesApiService
+import dk.lashout.podroid.data.remote.dto.GeminiRequest
+import dk.lashout.podroid.data.remote.dto.GeminiResponse
+import dk.lashout.podroid.data.remote.dto.ItunesEpisodeSearchResponse
+import dk.lashout.podroid.data.remote.dto.ItunesSearchResponse
+import dk.lashout.podroid.domain.model.AutoplayOrder
+import dk.lashout.podroid.domain.model.Episode
+import dk.lashout.podroid.domain.model.Playlist
+import dk.lashout.podroid.domain.model.PlaylistEntry
 import dk.lashout.podroid.domain.model.Podcast
+import dk.lashout.podroid.domain.repository.EpisodeRepository
+import dk.lashout.podroid.domain.repository.PlaylistRepository
 import dk.lashout.podroid.domain.repository.PodcastRepository
+import dk.lashout.podroid.domain.usecase.AddEpisodeToPlaylistUseCase
+import dk.lashout.podroid.domain.usecase.CreatePlaylistUseCase
+import dk.lashout.podroid.domain.usecase.GetPlaylistsUseCase
 import dk.lashout.podroid.domain.usecase.ImportPodcastUseCase
+import dk.lashout.podroid.domain.usecase.SearchEpisodesUseCase
 import dk.lashout.podroid.domain.usecase.SearchPodcastsUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -99,8 +115,18 @@ class ExploreViewModelTest {
         error: Throwable? = null,
         onSearch: () -> Unit = {}
     ): ExploreViewModel {
-        val repo = FakePodcastRepository(results, error, onSearch)
-        return ExploreViewModel(SearchPodcastsUseCase(repo), ImportPodcastUseCase(repo))
+        val podcastRepo = FakePodcastRepository(results, error, onSearch)
+        val playlistRepo = FakePlaylistRepository()
+        return ExploreViewModel(
+            searchPodcasts = SearchPodcastsUseCase(podcastRepo),
+            importPodcast = ImportPodcastUseCase(podcastRepo),
+            searchEpisodes = SearchEpisodesUseCase(FakeItunesApiService(), FakeGeminiApiService()),
+            podcastRepository = podcastRepo,
+            episodeRepository = FakeEpisodeRepository(),
+            addEpisodeToPlaylist = AddEpisodeToPlaylistUseCase(playlistRepo),
+            createPlaylist = CreatePlaylistUseCase(playlistRepo),
+            getPlaylists = GetPlaylistsUseCase(playlistRepo)
+        )
     }
 
     private fun podcast(id: String) = Podcast(
@@ -126,5 +152,47 @@ class ExploreViewModelTest {
         override suspend fun upsertPodcast(podcast: Podcast) = Unit
         override suspend fun importFromFeedUrl(feedUrl: String): Podcast = throw UnsupportedOperationException()
         override suspend fun setNotificationsEnabled(podcastId: String, enabled: Boolean) = Unit
+    }
+
+    private class FakeItunesApiService : ItunesApiService {
+        override suspend fun searchPodcasts(term: String, media: String, limit: Int) =
+            ItunesSearchResponse(resultCount = 0, results = emptyList())
+        override suspend fun searchEpisodes(term: String, entity: String, limit: Int) =
+            ItunesEpisodeSearchResponse(resultCount = 0, results = emptyList())
+    }
+
+    private class FakeEpisodeRepository : EpisodeRepository {
+        override suspend fun fetchAndStoreEpisodes(podcastId: String, feedUrl: String) = emptyList<Episode>()
+        override fun getEpisodesForPodcast(podcastId: String) = flowOf(emptyList<Episode>())
+        override fun getRecentEpisodesForSubscriptions() = flowOf(emptyList<Episode>())
+        override fun getPlayedEpisodes() = flowOf(emptyList<Episode>())
+        override suspend fun getEpisodeById(episodeId: String): Episode? = null
+        override suspend fun updatePlaybackPosition(episodeId: String, positionMs: Long) = Unit
+        override suspend fun markAsPlayed(episodeId: String) = Unit
+        override suspend fun markAsUnplayed(episodeId: String) = Unit
+        override suspend fun getEpisodeWithPodcast(episodeId: String): Episode? = null
+        override suspend fun getNextEpisodeInPodcast(podcastId: String, currentPublishedAt: Long, order: AutoplayOrder): Episode? = null
+        override suspend fun storeEpisode(episode: Episode) = Unit
+    }
+
+    private class FakeGeminiApiService : GeminiApiService {
+        override suspend fun generateContent(apiKey: String, request: GeminiRequest): GeminiResponse =
+            GeminiResponse(candidates = emptyList())
+    }
+
+    private class FakePlaylistRepository : PlaylistRepository {
+        override fun getPlaylists(): Flow<List<Playlist>> = flowOf(emptyList())
+        override suspend fun getPlaylistById(id: String): Playlist? = null
+        override suspend fun createPlaylist(name: String) = Playlist(id = name, name = name, isTemporary = false, createdAt = 0L)
+        override suspend fun deletePlaylist(id: String) = Unit
+        override suspend fun makePlaylistPermanent(id: String, name: String) = Playlist(id = id, name = name, isTemporary = false, createdAt = 0L)
+        override suspend fun getTemporaryPlaylist(): Playlist? = null
+        override suspend fun replaceTemporaryPlaylist(episodes: List<Episode>) = Playlist(id = "temp", name = "temp", isTemporary = true, createdAt = 0L)
+        override fun getPlaylistEntries(playlistId: String): Flow<List<PlaylistEntry>> = flowOf(emptyList())
+        override suspend fun getPlaylistEntriesSync(playlistId: String) = emptyList<PlaylistEntry>()
+        override suspend fun addEpisodeToPlaylist(playlistId: String, episodeId: String) = Unit
+        override suspend fun removeEntry(entryId: String) = Unit
+        override suspend fun reorder(playlistId: String, fromPosition: Int, toPosition: Int) = Unit
+        override suspend fun markEntryPlayedInPlaylist(playlistId: String, episodeId: String) = Unit
     }
 }

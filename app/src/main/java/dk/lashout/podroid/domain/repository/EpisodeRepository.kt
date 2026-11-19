@@ -15,4 +15,5 @@ interface EpisodeRepository {
     suspend fun markAsUnplayed(episodeId: String)
     suspend fun getEpisodeWithPodcast(episodeId: String): Episode?
     suspend fun getNextEpisodeInPodcast(podcastId: String, currentPublishedAt: Long, order: AutoplayOrder): Episode?
+    suspend fun storeEpisode(episode: Episode)
 }

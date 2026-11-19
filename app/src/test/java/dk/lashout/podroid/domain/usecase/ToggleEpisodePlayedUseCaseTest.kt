@@ -70,5 +70,6 @@ class ToggleEpisodePlayedUseCaseTest {
         override suspend fun getNextEpisodeInPodcast(
             podcastId: String, currentPublishedAt: Long, order: AutoplayOrder
         ): Episode? = null
+        override suspend fun storeEpisode(episode: Episode) = Unit
     }
 }
